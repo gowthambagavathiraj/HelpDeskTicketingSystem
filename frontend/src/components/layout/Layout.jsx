@@ -12,7 +12,7 @@ const NavItem = ({ to, icon: Icon, label, end }) => (
     className={({ isActive }) =>
       `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
         isActive
-          ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-600/30'
+          ? 'bg-green-600/20 text-green-300 border border-green-600/30'
           : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
       }`
     }
@@ -43,11 +43,11 @@ export default function Layout() {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-green-600 flex items-center justify-center">
             <Zap size={14} className="text-white" />
           </div>
           <div>
-            <span className="text-sm font-700 text-white tracking-tight">SmartDesk</span>
+            <span className="text-sm font-700 text-white tracking-tight">QueryQuest</span>
           </div>
         </div>
 
@@ -56,8 +56,8 @@ export default function Layout() {
           <p className="px-3 mb-2 text-xs font-600 uppercase tracking-widest text-slate-600">Main</p>
           <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" end />
           <NavItem to="/tickets" icon={Ticket} label="Tickets" />
-          <NavItem to="/tickets/new" icon={PlusCircle} label="New Ticket" />
-          <NavItem to="/ai-agent" icon={Bot} label="AI Agent" />
+          {!isAdmin && !isSupport && <NavItem to="/tickets/new" icon={PlusCircle} label="New Ticket" />}
+          <NavItem to="/ai-agent" icon={Bot} label="CampusBot" />
 
           {(isAdmin || isSupport) && (
             <>
@@ -72,7 +72,7 @@ export default function Layout() {
         {/* User Footer */}
         <div className="p-3 border-t" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center text-xs font-700 text-white flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center text-xs font-700 text-white flex-shrink-0">
               {user?.name?.[0]?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">

@@ -56,7 +56,7 @@ export default function RegisterPage() {
             <Zap size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-700 text-white tracking-tight">SmartDesk</h1>
+            <h1 className="text-xl font-700 text-white tracking-tight">QueryQuest</h1>
             <p className="text-xs text-slate-500">Create your account</p>
           </div>
         </div>

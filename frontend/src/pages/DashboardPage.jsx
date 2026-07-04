@@ -73,7 +73,7 @@ export default function DashboardPage() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-600 text-white">Recent Tickets</h2>
-          <Link to="/tickets" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+          <Link to="/tickets" className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1">
             View all <ChevronRight size={12} />
           </Link>
         </div>
@@ -82,9 +82,11 @@ export default function DashboardPage() {
           <div className="text-center py-10">
             <Ticket size={32} className="text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-400">No tickets yet.</p>
-            <Link to="/tickets/new" className="btn btn-primary mt-3 text-xs">
-              <PlusCircle size={14} /> Create First Ticket
-            </Link>
+            {user.role === 'USER' && (
+              <Link to="/tickets/new" className="btn btn-primary mt-3 text-xs">
+                <PlusCircle size={14} /> Create First Ticket
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
@@ -112,26 +114,40 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <Link to="/tickets/new" className="card flex items-center gap-3 hover:border-indigo-500/50 transition-colors cursor-pointer" style={{ padding: '1rem' }}>
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center">
-            <PlusCircle size={16} className="text-indigo-400" />
-          </div>
-          <div>
-            <p className="text-sm font-500 text-white">New Ticket</p>
-            <p className="text-xs text-slate-500">Report an issue</p>
-          </div>
-        </Link>
-        <Link to="/tickets" className="card flex items-center gap-3 hover:border-indigo-500/50 transition-colors cursor-pointer" style={{ padding: '1rem' }}>
-          <div className="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center">
-            <Ticket size={16} className="text-slate-400" />
-          </div>
-          <div>
-            <p className="text-sm font-500 text-white">All Tickets</p>
-            <p className="text-xs text-slate-500">View & manage</p>
-          </div>
-        </Link>
-      </div>
+      {user.role === 'USER' ? (
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Link to="/tickets/new" className="card flex items-center gap-3 hover:border-green-500/50 transition-colors cursor-pointer" style={{ padding: '1rem' }}>
+            <div className="w-8 h-8 rounded-lg bg-green-600/20 flex items-center justify-center">
+              <PlusCircle size={16} className="text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm font-500 text-white">New Ticket</p>
+              <p className="text-xs text-slate-500">Report an issue</p>
+            </div>
+          </Link>
+          <Link to="/tickets" className="card flex items-center gap-3 hover:border-green-500/50 transition-colors cursor-pointer" style={{ padding: '1rem' }}>
+            <div className="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center">
+              <Ticket size={16} className="text-slate-400" />
+            </div>
+            <div>
+              <p className="text-sm font-500 text-white">All Tickets</p>
+              <p className="text-xs text-slate-500">View & manage</p>
+            </div>
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <Link to="/tickets" className="card flex items-center gap-3 hover:border-green-500/50 transition-colors cursor-pointer" style={{ padding: '1rem' }}>
+            <div className="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center">
+              <Ticket size={16} className="text-slate-400" />
+            </div>
+            <div>
+              <p className="text-sm font-500 text-white">Manage Tickets</p>
+              <p className="text-xs text-slate-500">Review, assign & resolve</p>
+            </div>
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

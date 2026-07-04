@@ -22,6 +22,18 @@ const quickPrompts = [
     context: 'Support reply',
     prompt: 'Write a professional support reply for this ticket update: ',
   },
+  {
+    icon: ClipboardList,
+    title: 'Academic Query',
+    context: 'Academic queries',
+    prompt: 'Answer this academic question: ',
+  },
+  {
+    icon: LifeBuoy,
+    title: 'Administrative Query',
+    context: 'Administrative queries',
+    prompt: 'Answer this administrative question: ',
+  },
 ]
 
 export default function AIAgentPage() {
@@ -60,11 +72,11 @@ export default function AIAgentPage() {
     <div className="min-h-full p-6 animate-fade-in">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-xs font-600 text-cyan-300">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-green-400/20 bg-green-400/10 px-2.5 py-1 text-xs font-600 text-green-300">
             <Sparkles size={13} />
             Gemini Agent
           </div>
-          <h1 className="text-xl font-600 text-white">AI Helpdesk Agent</h1>
+          <h1 className="text-xl font-600 text-white">CampusBot - AI Assistant</h1>
         </div>
       </div>
 
@@ -99,11 +111,11 @@ export default function AIAgentPage() {
         <section className="card flex min-h-[620px] flex-col" style={{ padding: 0 }}>
           <form onSubmit={handleSubmit} className="border-b p-4" style={{ borderColor: 'var(--border)' }}>
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600/20 text-indigo-300 ring-1 ring-indigo-400/20">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-600/20 text-green-300 ring-1 ring-green-400/20">
                 <Bot size={19} />
               </div>
               <div className="min-w-0">
-                <h2 className="text-sm font-600 text-white">Ask SmartDesk AI</h2>
+                <h2 className="text-sm font-600 text-white">Ask CampusBot AI</h2>
               </div>
             </div>
 
@@ -120,6 +132,8 @@ export default function AIAgentPage() {
               <option>Troubleshooting</option>
               <option>Support reply</option>
               <option>Priority and routing</option>
+              <option>Academic queries</option>
+              <option>Administrative queries</option>
             </select>
 
             <label className="mb-2 block text-xs font-600 uppercase tracking-widest text-slate-600">
@@ -150,7 +164,7 @@ export default function AIAgentPage() {
               <div className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-sm font-600 text-white">
-                    <Sparkles size={15} className="text-cyan-300" />
+                    <Sparkles size={15} className="text-green-300" />
                     Response
                   </div>
                   {model && <span className="text-xs text-slate-500">{model}</span>}

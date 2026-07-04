@@ -10,9 +10,9 @@
   --surface-3: #252538;
   --border: #2e2e4a;
   --border-light: #3a3a5c;
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --accent-dark: #4f46e5;
+  --accent: #10b981;
+  --accent-light: #34d399;
+  --accent-dark: #059669;
   --text: #e2e8f0;
   --text-muted: #94a3b8;
   --text-faint: #64748b;
@@ -60,7 +60,7 @@ body {
 }
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
 }
 .input::placeholder { color: var(--text-faint); }
 
@@ -119,7 +119,7 @@ body {
 .badge-critical { background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
 
 /* Status badges */
-.badge-open { background: rgba(99,102,241,0.12); color: #818cf8; border: 1px solid rgba(99,102,241,0.2); }
+.badge-open { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
 .badge-in_progress { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
 .badge-resolved { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
 .badge-closed { background: rgba(100,116,139,0.12); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }

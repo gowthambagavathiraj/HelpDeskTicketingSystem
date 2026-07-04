@@ -25,6 +25,7 @@ public class TicketController {
     private final TicketService ticketService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<TicketResponse>> createTicket(
             @Valid @RequestPart("ticket") TicketRequest.Create request,
             @RequestPart(value = "file", required = false) MultipartFile file,
@@ -35,6 +36,7 @@ public class TicketController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<TicketResponse>> createTicketJson(
             @Valid @RequestBody TicketRequest.Create request,
             @AuthenticationPrincipal UserDetails userDetails) {
