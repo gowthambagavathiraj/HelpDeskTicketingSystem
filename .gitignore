@@ -1,0 +1,31 @@
+# Node dependencies
+frontend/node_modules/
+
+# Environment variables
+.env
+frontend/.env
+
+# Spring Boot config with secrets
+backend/src/main/resources/application.properties
+
+# Maven build output
+backend/target/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+*.iml
+
+# Build folders
+build/
+dist/
+
+# Optional cache folders
+.cache/
