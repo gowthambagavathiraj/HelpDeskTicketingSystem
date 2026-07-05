@@ -87,8 +87,9 @@ public class DataInitializer implements CommandLineRunner {
                 admin.setVerificationTokenExpiry(null);
                 userRepository.save(admin);
                 
-                log.info("✓ Admin user created and auto-verified: {} / {}", adminEmail, adminPassword);
+                log.info("✓ Admin user created and auto-verified: {}", adminEmail);
                 log.info("  You can now log in directly without email verification");
+                log.info("  Password: Use the value configured in app.admin.password");
                 log.info("  Configure email settings in application.properties for production use");
             }
         } else {

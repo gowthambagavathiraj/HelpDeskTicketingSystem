@@ -74,7 +74,7 @@ export default function AIAgentPage() {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-green-400/20 bg-green-400/10 px-2.5 py-1 text-xs font-600 text-green-300">
             <Sparkles size={13} />
-            Gemini Agent
+            Groq AI (Llama 3.3)
           </div>
           <h1 className="text-xl font-600 text-white">CampusBot - AI Assistant</h1>
         </div>

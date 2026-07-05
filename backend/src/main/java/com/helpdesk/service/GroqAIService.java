@@ -13,11 +13,10 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class GeminiAIService {
+public class GroqAIService {
 
     private static final String SYSTEM_INSTRUCTION = """
             You are CampusBot AI by QueryQuest, a concise helpdesk support agent inside a campus ticketing system.
@@ -30,55 +29,59 @@ public class GeminiAIService {
 
     private final RestClient restClient;
 
-    @Value("${gemini.api.key:}")
+    @Value("${groq.api.key:}")
     private String apiKey;
 
-    @Value("${gemini.model:gemini-3.5-flash}")
+    @Value("${groq.model:llama-3.3-70b-versatile}")
     private String model;
 
-    public GeminiAIService(RestClient.Builder restClientBuilder) {
+    public GroqAIService(RestClient.Builder restClientBuilder) {
         this.restClient = restClientBuilder
-                .baseUrl("https://generativelanguage.googleapis.com/v1beta")
+                .baseUrl("https://api.groq.com/openai/v1")
                 .build();
     }
 
     public AIResponse ask(AIRequest request) {
         if (!StringUtils.hasText(apiKey)) {
-            throw new BadRequestException("Gemini API key is not configured. Set GEMINI_API_KEY and restart the backend.");
+            throw new BadRequestException("Groq API key is not configured. Set GROQ_API_KEY and restart the backend.");
         }
 
+        log.info("Using Groq model: {}", model);
+
         String input = buildInput(request);
+        
+        // Groq uses OpenAI-compatible API format
         Map<String, Object> body = Map.of(
-                "systemInstruction", Map.of(
-                        "parts", List.of(Map.of("text", SYSTEM_INSTRUCTION))
+                "messages", List.of(
+                        Map.of("role", "system", "content", SYSTEM_INSTRUCTION),
+                        Map.of("role", "user", "content", input)
                 ),
-                "contents", List.of(Map.of(
-                        "role", "user",
-                        "parts", List.of(Map.of("text", input))
-                )),
-                "generationConfig", Map.of(
-                        "temperature", 0.4,
-                        "maxOutputTokens", 1200
-                )
+                "model", model,
+                "temperature", 0.4,
+                "max_tokens", 1200
         );
 
         try {
+            log.info("Making request to Groq API...");
+            
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restClient.post()
-                    .uri("/models/{model}:generateContent?key={apiKey}", normalizedModel(), apiKey)
+                    .uri("/chat/completions")
+                    .header("Authorization", "Bearer " + apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
                     .body(Map.class);
 
+            log.info("Groq API response received successfully");
             String answer = extractAnswer(response);
             return AIResponse.builder()
                     .answer(answer)
                     .model(model)
                     .build();
         } catch (RestClientException ex) {
-            log.error("Gemini request failed", ex);
-            throw new BadRequestException("Gemini could not answer right now. Check your API key, model, or quota.");
+            log.error("Groq request failed. Error: {}", ex.getMessage(), ex);
+            throw new BadRequestException("Groq AI could not answer right now. Error: " + ex.getMessage());
         }
     }
 
@@ -87,44 +90,29 @@ public class GeminiAIService {
         return "Context: " + context + "\n\nUser request:\n" + request.getQuestion().trim();
     }
 
-    private String normalizedModel() {
-        return model.startsWith("models/") ? model.substring("models/".length()) : model;
-    }
-
     private String extractAnswer(Map<String, Object> response) {
         if (response == null) {
-            throw new BadRequestException("Gemini returned an empty response.");
+            throw new BadRequestException("Groq returned an empty response.");
         }
 
-        Object candidates = response.get("candidates");
-        if (candidates instanceof List<?> candidateList && !candidateList.isEmpty()) {
-            String answer = candidateList.stream()
-                    .map(this::extractCandidateText)
-                    .filter(StringUtils::hasText)
-                    .collect(Collectors.joining("\n\n"))
-                    .trim();
-            if (StringUtils.hasText(answer)) return answer;
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            if (choices != null && !choices.isEmpty()) {
+                Map<String, Object> firstChoice = choices.get(0);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> message = (Map<String, Object>) firstChoice.get("message");
+                if (message != null) {
+                    String content = (String) message.get("content");
+                    if (StringUtils.hasText(content)) {
+                        return content.trim();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error parsing Groq response", e);
         }
 
-        throw new BadRequestException("Gemini returned a response without text.");
-    }
-
-    private String extractCandidateText(Object candidate) {
-        if (!(candidate instanceof Map<?, ?> candidateMap)) return "";
-
-        Object content = candidateMap.get("content");
-        if (!(content instanceof Map<?, ?> contentMap)) return "";
-
-        Object parts = contentMap.get("parts");
-        if (!(parts instanceof List<?> partList)) return "";
-
-        return partList.stream()
-                .filter(Map.class::isInstance)
-                .map(Map.class::cast)
-                .map(part -> part.get("text"))
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .filter(StringUtils::hasText)
-                .collect(Collectors.joining("\n"));
+        throw new BadRequestException("Groq returned a response without text.");
     }
 }

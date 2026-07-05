@@ -1,154 +1,299 @@
-# Smart Helpdesk Ticketing System
+# QueryQuest - Campus Helpdesk Ticketing System
 
-A full-stack helpdesk ticketing system built with Spring Boot and React.
+> A modern, full-stack helpdesk ticketing system with AI-powered support assistant.
 
-## Features
+![Java](https://img.shields.io/badge/Java-17+-blue)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen)
+![React](https://img.shields.io/badge/React-18.2-61dafb)
+![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-### User Features
-- User registration with email verification
-- Create support tickets with title, description, priority, and department
-- Upload file attachments to tickets
-- View all created tickets with status tracking
-- Real-time chat with support staff within tickets
-- Receive email notifications on ticket creation and status changes
-- Filter and search tickets
+---
 
-### Support Staff Features
-- View all assigned tickets
-- Real-time messaging with ticket creators
-- Update ticket status (Open → In Progress → Resolved → Closed)
-- Receive email notifications when tickets are assigned
+## 🌟 Features
 
-### Admin Features
-- Assign tickets to support staff members
-- Manage departments (create, delete)
-- Manage users (view all, update roles, activate/deactivate)
-- View comprehensive analytics dashboard:
-  - Total tickets, open, in progress, resolved, closed
-  - Average resolution time
-  - Tickets by priority
-  - Tickets by department
-  - Tickets by status
-- Full system oversight
+### Core Functionality
+- **🎫 Ticket Management** - Create, track, and resolve support tickets
+- **👥 Role-Based Access** - USER, SUPPORT_STAFF, and ADMIN roles
+- **🔔 Real-time Updates** - WebSocket notifications for ticket changes
+- **📊 Analytics Dashboard** - Track ticket metrics and performance
+- **📁 File Attachments** - Upload files with tickets and messages
+- **🔍 Advanced Search** - Filter by status, priority, department, keywords
 
-## Tech Stack
+### AI-Powered Support (CampusBot)
+- **🤖 Intelligent Assistant** - Powered by Google Gemini AI
+- **📚 Academic Queries** - Answer questions about courses, schedules, policies
+- **🏢 Administrative Help** - Assist with registration, fees, procedures
+- **🛠️ IT Support** - Troubleshoot technical issues
+- **✍️ Ticket Drafting** - Generate professional ticket descriptions
+
+### Security & Communication
+- **🔐 JWT Authentication** - Secure token-based auth
+- **📧 Email Verification** - Account activation via email
+- **🔄 Password Reset** - Secure password recovery flow
+- **💬 Real-time Chat** - Message threads within tickets
+- **🔒 Role-based Authorization** - Granular access control
+
+---
+
+## 🏗️ Tech Stack
 
 ### Backend
-- Java Spring Boot 3.2.0
-- Spring Security with JWT authentication
-- Spring Data JPA
-- MySQL Database
-- WebSocket (STOMP) for real-time messaging
-- JavaMailSender for email notifications
+- **Framework:** Spring Boot 3.2.0
+- **Language:** Java 17+
+- **Database:** MySQL 8.0+
+- **ORM:** Hibernate/JPA
+- **Security:** Spring Security + JWT
+- **WebSocket:** STOMP protocol
+- **Email:** Spring Mail
+- **AI:** Google Gemini API
 
 ### Frontend
-- React 18 (Create React App)
-- React Router for navigation
-- Axios for API calls
-- Tailwind CSS for styling
-- SockJS + STOMP for WebSocket
-- React Hot Toast for notifications
-- Recharts for analytics visualization
+- **Framework:** React 18.2
+- **Styling:** Tailwind CSS 3.3
+- **Routing:** React Router 6.20
+- **HTTP Client:** Axios
+- **Real-time:** SockJS + STOMP
+- **Icons:** Lucide React
+- **Charts:** Recharts
+- **Notifications:** React Hot Toast
 
-## Getting Started
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Java 17 or higher
-- Maven
-- MySQL 8.0
-- Node.js 18+ and npm
+```bash
+# Required
+- Java 17+
+- Maven 3.6+
+- Node.js 16+
+- MySQL 8.0+
 
-### Database Setup
-1. Start MySQL server
-2. Create database (or let Spring Boot create it automatically):
-   ```sql
-   CREATE DATABASE helpdesk_db;
-   ```
-3. Update MySQL credentials in `backend/src/main/resources/application.properties`:
-   ```properties
-   spring.datasource.username=root
-   spring.datasource.password=your_mysql_password
-   ```
-
-### Email Configuration
-Configure email settings in `backend/src/main/resources/application.properties`:
-```properties
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your_email@gmail.com
-spring.mail.password=your_app_password
-app.mail.from=your_email@gmail.com
+# Optional
+- Google Gemini API Key (for AI features)
+- Gmail account (for email notifications)
 ```
 
-For Gmail, you need to:
-1. Enable 2-factor authentication
-2. Generate an App Password from Google Account settings
-3. Use the App Password in the configuration
+### Installation
 
-### Backend Setup
-1. Navigate to the backend directory: `cd backend`
-2. Configure admin credentials in `backend/src/main/resources/application.properties`:
-   ```properties
-   # Admin Configuration
-   app.admin.name=System Administrator
-   app.admin.email=your_admin_email@gmail.com
-   app.admin.password=YourSecurePassword123
-   ```
-3. Run the application: `mvn spring-boot:run`
-4. Backend will start on http://localhost:8080
-5. The admin account will be automatically created and a verification email will be sent
-6. Check your email inbox and click the verification link before logging in
-
-### Admin Account Management
-The admin account is configured in `application.properties`:
-- Name: `app.admin.name`
-- Email: `app.admin.email`
-- Password: `app.admin.password`
-
-**Important:** Admin users must verify their email before they can log in to the dashboard.
-
-To create a fresh admin account:
-1. Stop the backend server
-2. Update the admin credentials in `application.properties`
-3. Delete the old admin user from the database (or use the admin panel to delete users)
-4. Restart the backend - the new admin will be created and a verification email will be sent
-5. Verify the email before logging in
-
-You can also delete users (including old admin accounts) through the admin panel once logged in.
-
-### Frontend Setup
-1. Navigate to the frontend directory: `cd frontend`
-2. Install dependencies: `npm install`
-3. Start development server: `npm start`
-4. Frontend will start on http://localhost:3000
-
-## Default Admin Account
-The admin account is configured in `backend/src/main/resources/application.properties`:
-```properties
-app.admin.name=System Administrator
-app.admin.email=gowthambagavthiraj@gmail.com
-app.admin.password=Admin@123
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd helpdesk
 ```
 
-Change these values before running the application for the first time.
+2. **Setup Database**
+```sql
+CREATE DATABASE helpdesk_db;
+```
 
-**Important:** When the backend starts, it will create the admin account and send a verification email. You must verify your email before you can log in to the dashboard.
+3. **Configure Backend**
+```bash
+cd backend/src/main/resources
+cp application-example.properties application.properties
+# Edit application.properties with your credentials
+```
 
-## Email Verification
-All users (including admins) must verify their email before logging in:
-1. Register or wait for admin account creation
-2. Check your email inbox for the verification link
-3. Click the verification link to activate your account
-4. Log in with your credentials
+4. **Start Backend**
+```bash
+cd backend
+mvn spring-boot:run
+```
 
-If you don't receive the verification email, click "Resend verification email" on the login page.
+5. **Setup Frontend**
+```bash
+cd frontend
+npm install
+npm start
+```
 
-## Forgot Password
-If you forget your password:
-1. Click "Forgot password?" on the login page
-2. Enter your email address
-3. Check your email for the password reset link
-4. Click the link and enter your new password
-5. Log in with your new password
+6. **Access Application**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
 
-The password reset link expires after 1 hour.
+📖 **Detailed setup instructions:** See [SETUP.md](SETUP.md)
+
+---
+
+## 📱 User Roles & Permissions
+
+| Feature | USER | SUPPORT_STAFF | ADMIN |
+|---------|------|---------------|-------|
+| Create Tickets | ✅ | ❌ | ❌ |
+| View Own Tickets | ✅ | ✅ (assigned) | ✅ (all) |
+| Update Ticket Status | ❌ | ✅ | ✅ |
+| Assign Tickets | ❌ | ❌ | ✅ |
+| Manage Users | ❌ | ❌ | ✅ |
+| View Analytics | ❌ | ❌ | ✅ |
+| Use CampusBot AI | ✅ | ✅ | ✅ |
+
+---
+
+## 🎯 Ticket Workflow
+
+```
+1. USER creates ticket → Status: OPEN
+2. ADMIN reviews and assigns → Assigns to SUPPORT_STAFF
+3. SUPPORT_STAFF works on issue → Status: IN_PROGRESS
+4. SUPPORT_STAFF resolves issue → Status: RESOLVED
+5. SUPPORT_STAFF/ADMIN closes → Status: CLOSED
+```
+
+---
+
+## 🛠️ API Endpoints
+
+### Authentication
+```
+POST   /api/auth/register          - Register new user
+POST   /api/auth/login             - Login
+GET    /api/auth/verify-email      - Verify email with token
+POST   /api/auth/forgot-password   - Request password reset
+POST   /api/auth/reset-password    - Reset password
+```
+
+### Tickets
+```
+POST   /api/tickets                - Create ticket (USER only)
+GET    /api/tickets                - List tickets (filtered by role)
+GET    /api/tickets/{id}           - Get ticket details
+PATCH  /api/tickets/{id}/status    - Update status
+PATCH  /api/tickets/{id}/assign    - Assign ticket (ADMIN only)
+```
+
+### Messages
+```
+POST   /api/messages               - Add message to ticket
+GET    /api/messages/ticket/{id}   - Get ticket messages
+```
+
+### AI Assistant
+```
+POST   /api/ai/ask                 - Query CampusBot AI
+```
+
+### Admin
+```
+GET    /api/admin/analytics        - System analytics (ADMIN only)
+GET    /api/admin/users            - List all users (ADMIN only)
+PATCH  /api/admin/users/{id}/role  - Update user role (ADMIN only)
+```
+
+---
+
+## 🎨 Screenshots
+
+*(Add screenshots of your application here)*
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+**Backend:**
+```properties
+# Database
+DB_USERNAME=your_db_user
+DB_PASSWORD=your_db_password
+
+# Security
+JWT_SECRET=your-long-jwt-secret-key
+
+# Email
+MAIL_PORT=587
+MAIL_FROM=your_email@gmail.com
+
+# AI
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-1.5-flash
+
+# Frontend
+FRONTEND_URL=http://localhost:3000
+```
+
+**Frontend:**
+Uses proxy configuration in `package.json` to forward API requests to backend.
+
+---
+
+## 📦 Build for Production
+
+### Backend
+```bash
+cd backend
+mvn clean package
+java -jar target/helpdesk-backend-1.0.0.jar
+```
+
+### Frontend
+```bash
+cd frontend
+npm run build
+# Deploy 'build' folder to static hosting
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## 🐛 Known Issues
+
+- **npm registry**: If `npm install` fails, reset registry: 
+  ```bash
+  npm config set registry https://registry.npmjs.org/
+  ```
+- **Email sending**: Requires proper SMTP configuration; admin auto-verifies if email fails
+
+---
+
+## 🔮 Future Enhancements
+
+- [ ] Mobile app (React Native)
+- [ ] File preview for attachments
+- [ ] Ticket templates
+- [ ] SLA (Service Level Agreement) tracking
+- [ ] Knowledge base integration
+- [ ] Advanced reporting
+- [ ] Multi-language support
+- [ ] Dark/Light theme toggle
+- [ ] Ticket priority auto-detection (AI)
+- [ ] Voice-to-text ticket creation
+
+---
+
+## 💡 Acknowledgments
+
+- Google Gemini for AI capabilities
+- Spring Boot team for the excellent framework
+- React community for amazing tooling
+- All open-source contributors
+
+---
+
+## 📞 Support
+
+For setup help, see [SETUP.md](SETUP.md)
+
+For bug reports or feature requests, open an issue on GitHub.
+
+---
+
+**Made with ❤️ for campus support teams**
