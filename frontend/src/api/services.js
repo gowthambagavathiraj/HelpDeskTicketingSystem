@@ -46,5 +46,10 @@ export const adminAPI = {
 }
 
 export const aiAPI = {
-  ask: (data) => api.post('/ai/ask', data),
+  ask: (data, sessionId) => api.post('/ai/ask', data, {
+    headers: sessionId ? { 'X-Session-ID': sessionId } : {}
+  }),
+  getSuggestions: (context) => api.get('/ai/suggestions', { params: { context } }),
+  clearHistory: (sessionId) => api.delete(`/ai/history/${sessionId}`),
+  healthCheck: () => api.get('/ai/health'),
 }

@@ -21,21 +21,33 @@ public class JwtUtils {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration}")
-    private long jwtExpirationMs;
+    @Value("${app.jwt.expiration:900000}")
+    private long jwtExpirationMs; // 15 minutes
+
+    @Value("${app.jwt.refresh-expiration:604800000}")
+    private long refreshExpirationMs; // 7 days
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        extraClaims.put("type", "access");
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    public long getAccessTokenExpiration() {
+        return jwtExpirationMs / 1000; // return in seconds
+    }
+
+    public long getRefreshTokenExpiration() {
+        return refreshExpirationMs / 1000; // return in seconds
     }
 
     public String extractUsername(String token) {

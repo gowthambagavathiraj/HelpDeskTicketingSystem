@@ -1,0 +1,316 @@
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import { aiAPI } from '../api/services'
+import { Bot, Building2, ClipboardList, GraduationCap, LifeBuoy, Send, Sparkles, Wand2 } from 'lucide-react'
+
+const academicPrompts = [
+  {
+    icon: GraduationCap,
+    title: 'Course Information',
+    context: 'Academic queries',
+    prompt: 'Tell me about this course: ',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Assignment Help',
+    context: 'Academic queries',
+    prompt: 'I need help with this assignment: ',
+  },
+  {
+    icon: LifeBuoy,
+    title: 'Exam Schedule',
+    context: 'Academic queries',
+    prompt: 'When is the exam for: ',
+  },
+  {
+    icon: Wand2,
+    title: 'Study Resources',
+    context: 'Academic queries',
+    prompt: 'Where can I find study materials for: ',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Professor Contact',
+    context: 'Academic queries',
+    prompt: 'How can I contact the professor for: ',
+  },
+  {
+    icon: LifeBuoy,
+    title: 'Troubleshoot Issue',
+    context: 'Troubleshooting',
+    prompt: 'Help me troubleshoot this issue: ',
+  },
+]
+
+const administrativePrompts = [
+  {
+    icon: Building2,
+    title: 'Registration',
+    context: 'Administrative queries',
+    prompt: 'Help me with course registration for: ',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Fee Information',
+    context: 'Administrative queries',
+    prompt: 'Tell me about fees and payment for: ',
+  },
+  {
+    icon: GraduationCap,
+    title: 'Scholarship',
+    context: 'Administrative queries',
+    prompt: 'What scholarships are available for: ',
+  },
+  {
+    icon: Building2,
+    title: 'Library Services',
+    context: 'Administrative queries',
+    prompt: 'How do I access library services: ',
+  },
+  {
+    icon: LifeBuoy,
+    title: 'Hostel Information',
+    context: 'Administrative queries',
+    prompt: 'Tell me about hostel facilities: ',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Campus Facilities',
+    context: 'Administrative queries',
+    prompt: 'What facilities are available on campus: ',
+  },
+  {
+    icon: Building2,
+    title: 'Transport Services',
+    context: 'Administrative queries',
+    prompt: 'Tell me about campus transport: ',
+  },
+  {
+    icon: GraduationCap,
+    title: 'Placement Cell',
+    context: 'Administrative queries',
+    prompt: 'How can I contact the placement cell: ',
+  },
+]
+
+export default function AIAgentPage() {
+  const [activeTab, setActiveTab] = useState('academic') // 'academic' or 'administrative'
+  const [question, setQuestion] = useState('')
+  const [context, setContext] = useState('Academic queries')
+  const [answer, setAnswer] = useState('')
+  const [model, setModel] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const currentPrompts = activeTab === 'academic' ? academicPrompts : administrativePrompts
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!question.trim()) {
+      toast.error('Ask the agent something first.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await aiAPI.ask({ question, context })
+      setAnswer(response.data.data?.answer || '')
+      setModel(response.data.data?.model || '')
+    } catch (error) {
+      const message = error.response?.data?.message || 'AI agent is unavailable right now.'
+      toast.error(message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePromptClick = (item) => {
+    setContext(item.context)
+    setQuestion(item.prompt)
+  }
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setContext(tab === 'academic' ? 'Academic queries' : 'Administrative queries')
+    setQuestion('')
+    setAnswer('')
+  }
+
+  return (
+    <div className="min-h-full p-6 animate-fade-in">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-green-400/20 bg-green-400/10 px-2.5 py-1 text-xs font-600 text-green-300">
+            <Sparkles size={13} />
+            Groq AI (Llama 3.3)
+          </div>
+          <h1 className="text-xl font-600 text-white">CampusBot - AI Assistant</h1>
+          <p className="mt-1 text-sm text-slate-400">Get instant answers to academic and administrative questions</p>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mb-6 flex gap-2 border-b border-slate-700/50">
+        <button
+          onClick={() => handleTabChange('academic')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-500 transition-colors border-b-2 ${
+            activeTab === 'academic'
+              ? 'border-green-500 text-green-400'
+              : 'border-transparent text-slate-400 hover:text-slate-300'
+          }`}
+        >
+          <GraduationCap size={18} />
+          Academic & Support
+        </button>
+        <button
+          onClick={() => handleTabChange('administrative')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-500 transition-colors border-b-2 ${
+            activeTab === 'administrative'
+              ? 'border-green-500 text-green-400'
+              : 'border-transparent text-slate-400 hover:text-slate-300'
+          }`}
+        >
+          <Building2 size={18} />
+          Administrative Services
+        </button>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="space-y-4">
+          <div className="card" style={{ padding: '1rem' }}>
+            <h2 className="mb-3 text-sm font-600 text-white">
+              {activeTab === 'academic' ? 'Academic Quick Actions' : 'Administrative Services'}
+            </h2>
+            <div className="space-y-2">
+              {currentPrompts.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => handlePromptClick(item)}
+                    className="flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-3 text-left transition-colors hover:border-slate-700 hover:bg-white/5"
+                  >
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-green-500/10 text-green-300 ring-1 ring-green-400/20">
+                      <Icon size={17} />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-500 text-slate-200">{item.title}</span>
+                      <span className="block text-xs text-slate-500">{item.context}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </aside>
+
+        <section className="card flex min-h-[620px] flex-col" style={{ padding: 0 }}>
+          <form onSubmit={handleSubmit} className="border-b p-4" style={{ borderColor: 'var(--border)' }}>
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-600/20 text-green-300 ring-1 ring-green-400/20">
+                <Bot size={19} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-600 text-white">Ask CampusBot AI</h2>
+              </div>
+            </div>
+
+            <label className="mb-2 block text-xs font-600 uppercase tracking-widest text-slate-600">
+              Context
+            </label>
+            <select
+              className="input mb-3"
+              value={context}
+              onChange={(event) => setContext(event.target.value)}
+            >
+              {activeTab === 'academic' ? (
+                <>
+                  <option>Academic queries</option>
+                  <option>Course information</option>
+                  <option>Exam schedules</option>
+                  <option>Assignment help</option>
+                  <option>Study resources</option>
+                  <option>Professor contact</option>
+                  <option>Troubleshooting</option>
+                </>
+              ) : (
+                <>
+                  <option>Administrative queries</option>
+                  <option>Registration</option>
+                  <option>Fee information</option>
+                  <option>Scholarships</option>
+                  <option>Library services</option>
+                  <option>Hostel information</option>
+                  <option>Campus facilities</option>
+                  <option>Transport services</option>
+                  <option>Placement cell</option>
+                </>
+              )}
+            </select>
+
+            <label className="mb-2 block text-xs font-600 uppercase tracking-widest text-slate-600">
+              Request
+            </label>
+            <textarea
+              className="input min-h-[150px] resize-y"
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder={
+                activeTab === 'academic'
+                  ? 'Example: When is the deadline for Computer Science 101 assignment? What are the exam dates?'
+                  : 'Example: How do I apply for a scholarship? What documents are needed for hostel registration?'
+              }
+            />
+
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">{question.length}/4000 characters</p>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? (
+                  <span className="h-4 w-4 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
+                Ask Agent
+              </button>
+            </div>
+          </form>
+
+          <div className="flex-1 p-4">
+            {answer ? (
+              <div className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm font-600 text-white">
+                    <Sparkles size={15} className="text-green-300" />
+                    Response
+                  </div>
+                  {model && <span className="text-xs text-slate-500">{model}</span>}
+                </div>
+                <div className="whitespace-pre-wrap text-sm leading-6 text-slate-300">{answer}</div>
+              </div>
+            ) : (
+              <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 text-center">
+                {activeTab === 'academic' ? (
+                  <>
+                    <GraduationCap size={34} className="mb-3 text-slate-600" />
+                    <p className="text-sm font-500 text-slate-300">No response yet</p>
+                    <p className="mt-1 max-w-sm text-sm text-slate-500">
+                      Ask about courses, exams, assignments, or any academic topic.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Building2 size={34} className="mb-3 text-slate-600" />
+                    <p className="text-sm font-500 text-slate-300">No response yet</p>
+                    <p className="mt-1 max-w-sm text-sm text-slate-500">
+                      Ask about registration, fees, scholarships, facilities, or any administrative service.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  )
+}
