@@ -11,6 +11,10 @@ import TicketListPage from './pages/tickets/TicketListPage'
 import TicketDetailPage from './pages/tickets/TicketDetailPage'
 import CreateTicketPage from './pages/tickets/CreateTicketPage'
 import AIAgentPage from './pages/AIAgentPage'
+import FAQPage from './pages/FAQPage'
+import AnnouncementsPage from './pages/AnnouncementsPage'
+import FeedbackPage from './pages/FeedbackPage'
+import ProfilePage from './pages/ProfilePage'
 import AdminPanel from './pages/admin/AdminPanel'
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard'
 import UsersPage from './pages/admin/UsersPage'
@@ -48,6 +52,10 @@ export default function App() {
         <Route path="tickets/new" element={<CreateTicketPage />} />
         <Route path="tickets/:id" element={<TicketDetailPage />} />
         <Route path="ai-agent" element={<AIAgentPage />} />
+        <Route path="faqs" element={<FAQPage />} />
+        <Route path="announcements" element={<AnnouncementsPage />} />
+        <Route path="feedback" element={<FeedbackPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         
         <Route path="admin" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>

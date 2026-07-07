@@ -35,7 +35,7 @@ export const departmentAPI = {
   delete: (id) => api.delete(`/admin/departments/${id}`),
 }
 
-// ─── Admin ─────────────────────────────────────────────────────────────────────
+// ─── Admin User Management ─────────────────────────────────────────────────────
 export const adminAPI = {
   getAnalytics: () => api.get('/admin/analytics'),
   getUsers: () => api.get('/admin/users'),
@@ -45,11 +45,51 @@ export const adminAPI = {
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
 }
 
+// ─── FAQs ──────────────────────────────────────────────────────────────────────
+export const faqAPI = {
+  list: (params) => api.get('/faqs', { params }),
+  getCategories: () => api.get('/faqs/categories'),
+  create: (data) => api.post('/faqs', data),
+  update: (id, data) => api.put(`/faqs/${id}`, data),
+  delete: (id) => api.delete(`/faqs/${id}`),
+}
+
+// ─── Announcements ─────────────────────────────────────────────────────────────
+export const announcementAPI = {
+  list: (category) => api.get('/announcements', { params: { category } }),
+  create: (data) => api.post('/announcements', data),
+}
+
+// ─── Feedback ──────────────────────────────────────────────────────────────────
+export const feedbackAPI = {
+  submit: (data) => api.post('/feedbacks', data),
+  list: () => api.get('/feedbacks'),
+  getRatings: () => api.get('/feedbacks/ratings'),
+}
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+export const notificationAPI = {
+  list: () => api.get('/notifications'),
+  getUnread: () => api.get('/notifications/unread'),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/notifications/read-all'),
+}
+
+// ─── Profile ───────────────────────────────────────────────────────────────────
+export const profileAPI = {
+  get: () => api.get('/profile'),
+  update: (data) => api.put('/profile', data),
+}
+
+// ─── AI Assistant ──────────────────────────────────────────────────────────────
 export const aiAPI = {
   ask: (data, sessionId) => api.post('/ai/ask', data, {
     headers: sessionId ? { 'X-Session-ID': sessionId } : {}
   }),
   getSuggestions: (context) => api.get('/ai/suggestions', { params: { context } }),
   clearHistory: (sessionId) => api.delete(`/ai/history/${sessionId}`),
+  getHistory: () => api.get('/ai/history'),
+  getLogs: () => api.get('/ai/logs'),
   healthCheck: () => api.get('/ai/health'),
 }

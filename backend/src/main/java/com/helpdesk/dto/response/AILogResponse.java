@@ -5,19 +5,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AIResponse {
+public class AILogResponse {
+    private Long id;
+    private String studentName;
+    private String studentEmail;
+    private String sessionId;
+    private String question;
     private String answer;
-    private String model;
-    private Double confidenceScore;
+    private BigDecimal confidenceScore;
     private String intent;
     private String sentiment;
-    private List<String> suggestedFAQs;
     private Boolean ticketCreated;
     private Long ticketId;
+    private LocalDateTime createdAt;
 }

@@ -1,60 +1,106 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { aiAPI } from '../api/services'
-import { Bot, Building2, Clock, Copy, Download, GraduationCap, History, RefreshCw, Send, Sparkles, Trash2, X } from 'lucide-react'
+import { aiAPI, feedbackAPI } from '../api/services'
+import { useAuth } from '../context/AuthContext'
+import { 
+  Box, Card, CardContent, Typography, TextField, Button, Grid, 
+  CircularProgress, LinearProgress, Chip, Rating, Alert
+} from '@mui/material'
+import { 
+  Bot, Send, Sparkles, Trash2, AlertTriangle, Smile
+} from 'lucide-react'
 
-const academicActions = [
-  { icon: GraduationCap, title: 'Course Info', prompt: 'Tell me about course prerequisites for: ' },
-  { icon: GraduationCap, title: 'Exam Schedule', prompt: 'When are the exams for: ' },
-  { icon: GraduationCap, title: 'Assignment Help', prompt: 'Help me understand this assignment: ' },
-  { icon: GraduationCap, title: 'Study Resources', prompt: 'Where can I find study materials for: ' },
+const academicSuggestions = [
+  "What is the minimum attendance requirement?",
+  "What is the grading system for my courses?",
+  "When is the end semester exam timetable published?",
+  "Tell me about course credits."
 ]
 
-const administrativeActions = [
-  { icon: Building2, title: 'Registration', prompt: 'How do I register for: ' },
-  { icon: Building2, title: 'Fees', prompt: 'Tell me about fees for: ' },
-  { icon: Building2, title: 'Scholarship', prompt: 'What scholarships are available for: ' },
-  { icon: Building2, title: 'Facilities', prompt: 'Tell me about campus facilities: ' },
+const adminSuggestions = [
+  "How do I apply for a Bus Pass?",
+  "What is the process to apply for a scholarship?",
+  "How can I pay my semester fees online?",
+  "What are the hostel room registration rules?"
 ]
 
 export default function AIAgentPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('academic')
   const [question, setQuestion] = useState('')
-  const [context, setContext] = useState('Academic queries')
   const [loading, setLoading] = useState(false)
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
-  const [conversationHistory, setConversationHistory] = useState([])
-  const [suggestedQuestions, setSuggestedQuestions] = useState([])
-  const [showHistory, setShowHistory] = useState(false)
-  const [stats, setStats] = useState({ totalQuestions: 0, avgResponseTime: 0 })
+  const [chatHistory, setChatHistory] = useState([])
+  const [showDiagnostics] = useState(true)
+  const [lastDiagnostics, setLastDiagnostics] = useState(null)
   
   const chatEndRef = useRef(null)
   const inputRef = useRef(null)
 
   useEffect(() => {
-    loadSuggestions(context)
-    scrollToBottom()
-  }, [context])
+    loadDatabaseHistory()
+    loadSuggestions('Academic queries')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
-  }, [conversationHistory])
+  }, [chatHistory, loading])
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const loadSuggestions = async (ctx) => {
+  const loadDatabaseHistory = async () => {
+    if (!user) return
     try {
-      const response = await aiAPI.getSuggestions(ctx)
-      setSuggestedQuestions(response.data.data || [])
+      const response = await aiAPI.getHistory()
+      const logs = response.data.data || []
+      // Convert database logs to local chat structure
+      const formatted = logs.map(logItem => ({
+        id: logItem.id,
+        role: 'user',
+        content: logItem.question,
+        timestamp: logItem.createdAt,
+        isDbRecord: true
+      })).flatMap((val, index) => {
+        // Interleave user and assistant answers
+        const dbLog = logs[index]
+        return [
+          { role: 'user', content: dbLog.question, timestamp: dbLog.createdAt },
+          { 
+            role: 'assistant', 
+            content: dbLog.answer, 
+            timestamp: dbLog.createdAt,
+            confidenceScore: dbLog.confidenceScore,
+            intent: dbLog.intent,
+            sentiment: dbLog.sentiment,
+            ticketCreated: dbLog.ticketCreated,
+            ticketId: dbLog.ticketId
+          }
+        ]
+      })
+      // Reverse to chronological order (since logs are desc)
+      setChatHistory(formatted.reverse())
     } catch (error) {
-      console.error('Failed to load suggestions:', error)
+      console.error('Failed to load chat history:', error)
     }
   }
 
+  const loadSuggestions = async (context) => {
+    // API suggestions placeholder
+  }
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    const context = tab === 'academic' ? 'Academic queries' : 'Administrative queries'
+    loadSuggestions(context)
+  }
+
   const handleSubmit = async (event) => {
-    event.preventDefault()
+    if (event) event.preventDefault()
     if (!question.trim()) {
       toast.error('Please enter a question')
       return
@@ -64,318 +110,368 @@ export default function AIAgentPage() {
     setQuestion('')
     setLoading(true)
 
-    const startTime = Date.now()
-    
-    // Add user message immediately
+    // Add user message
     const userMessage = {
       role: 'user',
       content: userQuestion,
       timestamp: new Date().toISOString()
     }
-    setConversationHistory(prev => [...prev, userMessage])
+    setChatHistory(prev => [...prev, userMessage])
 
     try {
-      const response = await aiAPI.ask({ question: userQuestion, context }, sessionId)
-      const responseTime = Date.now() - startTime
-      
+      const contextStr = activeTab === 'academic' ? 'Academic queries' : 'Administrative queries'
+      const response = await aiAPI.ask({ question: userQuestion, context: contextStr }, sessionId)
+      const data = response.data.data
+
       const assistantMessage = {
         role: 'assistant',
-        content: response.data.data?.answer || '',
-        model: response.data.data?.model || '',
-        timestamp: new Date().toISOString(),
-        responseTime
+        content: data.answer,
+        confidenceScore: data.confidenceScore,
+        intent: data.intent,
+        sentiment: data.sentiment,
+        suggestedFAQs: data.suggestedFAQs,
+        ticketCreated: data.ticketCreated,
+        ticketId: data.ticketId,
+        timestamp: new Date().toISOString()
       }
-      
-      setConversationHistory(prev => [...prev, assistantMessage])
-      
-      // Update stats
-      setStats(prev => ({
-        totalQuestions: prev.totalQuestions + 1,
-        avgResponseTime: ((prev.avgResponseTime * prev.totalQuestions) + responseTime) / (prev.totalQuestions + 1)
-      }))
-      
-      toast.success('Response received')
+
+      setChatHistory(prev => [...prev, assistantMessage])
+      setLastDiagnostics({
+        confidenceScore: data.confidenceScore,
+        intent: data.intent,
+        sentiment: data.sentiment
+      })
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to get response'
-      toast.error(errorMessage)
-      
-      // Add error message to chat
-      setConversationHistory(prev => [...prev, {
+      const errMsg = error.response?.data?.message || 'Failed to connect to CampusBot'
+      toast.error(errMsg)
+      setChatHistory(prev => [...prev, {
         role: 'error',
-        content: errorMessage,
+        content: errMsg,
         timestamp: new Date().toISOString()
       }])
     } finally {
       setLoading(false)
-      inputRef.current?.focus()
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab)
-    const newContext = tab === 'academic' ? 'Academic queries' : 'Administrative queries'
-    setContext(newContext)
-    loadSuggestions(newContext)
+  const handleRatingSubmit = async (val, type) => {
+    try {
+      await feedbackAPI.submit({
+        aiRating: type === 'ai' ? val : 5,
+        staffRating: 5,
+        overallRating: 5,
+        comment: `Inline chat feedback score: ${val}`
+      })
+      toast.success('Thank you for rating this response!')
+    } catch (e) {
+      toast.error('Failed to submit rating')
+    }
   }
 
-  const handlePromptClick = (prompt) => {
-    setQuestion(prompt)
-    inputRef.current?.focus()
-  }
-
-  const handleSuggestionClick = (suggestion) => {
-    setQuestion(suggestion)
-    inputRef.current?.focus()
-  }
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard')
-  }
-
-  const clearConversation = async () => {
-    if (window.confirm('Clear entire conversation history?')) {
+  const clearChat = async () => {
+    if (window.confirm('Clear all conversation history?')) {
       try {
         await aiAPI.clearHistory(sessionId)
-        setConversationHistory([])
-        setStats({ totalQuestions: 0, avgResponseTime: 0 })
-        toast.success('Conversation cleared')
+        setChatHistory([])
+        setLastDiagnostics(null)
+        toast.success('Chat history cleared')
       } catch (error) {
         toast.error('Failed to clear history')
       }
     }
   }
 
-  const exportConversation = () => {
-    const text = conversationHistory
-      .map(msg => `[${msg.role.toUpperCase()}] ${new Date(msg.timestamp).toLocaleString()}\n${msg.content}\n`)
-      .join('\n---\n\n')
-    
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `campusbot-conversation-${new Date().toISOString()}.txt`
-    a.click()
-    toast.success('Conversation exported')
+  const handleSuggestClick = (q) => {
+    setQuestion(q)
+    inputRef.current?.focus()
   }
 
-  const currentActions = activeTab === 'academic' ? academicActions : administrativeActions
+  const currentSuggestions = activeTab === 'academic' ? academicSuggestions : adminSuggestions
 
   return (
-    <div className="min-h-full p-6 animate-fade-in">
+    <Box sx={{ p: 4 }} className="animate-fade-in">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-green-400/20 bg-green-400/10 px-2.5 py-1 text-xs font-600 text-green-300">
-            <Sparkles size={13} />
-            Groq AI (Llama 3.3) • Enhanced
-          </div>
-          <h1 className="text-xl font-600 text-white">CampusBot - AI Assistant</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            {stats.totalQuestions > 0 && (
-              <span>{stats.totalQuestions} questions • Avg response: {Math.round(stats.avgResponseTime)}ms</span>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Bot size={32} className="text-blue-500" />
+            CampusBot AI Assistant
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+            Ask questions about academic schedules, exams, placement cells, and fees in natural language.
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            startIcon={<Trash2 size={16} />}
+            onClick={clearChat}
+            disabled={chatHistory.length === 0}
+          >
+            Clear History
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Grid containing Chat Panel and Diagnostics Panel */}
+      <Grid container spacing={4}>
+        {/* Sidebar suggestions */}
+        <Grid item xs={12} lg={3}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Context Switcher */}
+            <Card>
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Assistant Focus</Typography>
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <Button 
+                      fullWidth 
+                      variant={activeTab === 'academic' ? 'contained' : 'outlined'} 
+                      onClick={() => handleTabChange('academic')}
+                      size="small"
+                    >
+                      Academic
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Button 
+                      fullWidth 
+                      variant={activeTab === 'administrative' ? 'contained' : 'outlined'} 
+                      onClick={() => handleTabChange('administrative')}
+                      size="small"
+                      color="secondary"
+                    >
+                      Admin
+                    </Button>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* Quick Prompts */}
+            <Card>
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Suggested Queries</Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {currentSuggestions.map((q, idx) => (
+                    <Button 
+                      key={idx} 
+                      variant="text" 
+                      onClick={() => handleSuggestClick(q)}
+                      sx={{ justifyContent: 'flex-start', textAlign: 'left', fontSize: '0.75rem', py: 0.5, px: 1, color: 'text.secondary' }}
+                    >
+                      • {q}
+                    </Button>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Live Diagnostics Card */}
+            {lastDiagnostics && showDiagnostics && (
+              <Card sx={{ borderLeft: '4px solid #8b5cf6' }}>
+                <CardContent sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Sparkles size={16} className="text-purple-500" />
+                    AI Engine Diagnostics
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" color="textSecondary">Confidence Score</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 600 }}>{Math.round(lastDiagnostics.confidenceScore * 100)}%</Typography>
+                      </Box>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={lastDiagnostics.confidenceScore * 100} 
+                        color={lastDiagnostics.confidenceScore >= 0.8 ? 'success' : lastDiagnostics.confidenceScore >= 0.6 ? 'warning' : 'error'}
+                        sx={{ height: 6, borderRadius: 3 }}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="textSecondary">User Intent</Typography>
+                      <Chip label={lastDiagnostics.intent} size="small" sx={{ fontSize: '0.65rem', fontWeight: 600 }} />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="textSecondary">Student Sentiment</Typography>
+                      <Chip 
+                        icon={<Smile size={12} />} 
+                        label={lastDiagnostics.sentiment} 
+                        size="small" 
+                        color={lastDiagnostics.sentiment === 'FRUSTRATED' || lastDiagnostics.sentiment === 'URGENT' ? 'error' : 'default'} 
+                        sx={{ fontSize: '0.65rem', fontWeight: 600 }} 
+                      />
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
             )}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="btn btn-secondary"
-            title="Toggle chat history"
-          >
-            <History size={16} />
-          </button>
-          <button
-            onClick={exportConversation}
-            className="btn btn-secondary"
-            disabled={conversationHistory.length === 0}
-            title="Export conversation"
-          >
-            <Download size={16} />
-          </button>
-          <button
-            onClick={clearConversation}
-            className="btn btn-secondary"
-            disabled={conversationHistory.length === 0}
-            title="Clear conversation"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      </div>
+          </Box>
+        </Grid>
 
-      {/* Tab Navigation */}
-      <div className="mb-6 flex gap-2 border-b border-slate-700/50">
-        <button
-          onClick={() => handleTabChange('academic')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-500 transition-colors border-b-2 ${
-            activeTab === 'academic'
-              ? 'border-green-500 text-green-400'
-              : 'border-transparent text-slate-400 hover:text-slate-300'
-          }`}
-        >
-          <GraduationCap size={18} />
-          Academic & Support
-        </button>
-        <button
-          onClick={() => handleTabChange('administrative')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-500 transition-colors border-b-2 ${
-            activeTab === 'administrative'
-              ? 'border-green-500 text-green-400'
-              : 'border-transparent text-slate-400 hover:text-slate-300'
-          }`}
-        >
-          <Building2 size={18} />
-          Administrative Services
-        </button>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-        {/* Sidebar */}
-        <aside className="space-y-4">
-          {/* Quick Actions */}
-          <div className="card" style={{ padding: '1rem' }}>
-            <h2 className="mb-3 text-sm font-600 text-white">Quick Start</h2>
-            <div className="space-y-2">
-              {currentActions.map((item, idx) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handlePromptClick(item.prompt)}
-                    className="flex w-full items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:border-slate-700 hover:bg-white/5"
+        {/* Chat window */}
+        <Grid item xs={12} lg={9}>
+          <Card sx={{ height: '70vh', display: 'flex', flexDirection: 'column', p: 0 }}>
+            {/* Conversations container */}
+            <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {chatHistory.length === 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', py: 8 }}>
+                  <Bot size={48} className="text-slate-500 mb-3 animate-bounce" />
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>How can I help you today?</Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ maxWidth: 400, mt: 1 }}>
+                    Type your academic or administrative question below. If I can't resolve it, a ticket will be auto-generated for support staff.
+                  </Typography>
+                </Box>
+              ) : (
+                chatHistory.map((msg, idx) => (
+                  <Box 
+                    key={idx} 
+                    sx={{ 
+                      display: 'flex', 
+                      gap: 2, 
+                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      width: '100%' 
+                    }}
                   >
-                    <Icon size={16} className="text-green-400" />
-                    <span className="text-sm font-500 text-slate-200">{item.title}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+                    {msg.role !== 'user' && (
+                      <Box sx={{ p: 1, borderRadius: 2, backgroundColor: 'primary.light', color: 'primary.contrastText', height: 36, width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Bot size={20} />
+                      </Box>
+                    )}
+                    <Box 
+                      sx={{ 
+                        maxWidth: '75%', 
+                        p: 2, 
+                        borderRadius: 3, 
+                        backgroundColor: msg.role === 'user' ? 'rgba(59, 130, 246, 0.15)' : msg.role === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-2)',
+                        border: msg.role === 'user' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--border)'
+                      }}
+                    >
+                      <Typography variant="body2" className="whitespace-pre-wrap leading-relaxed">
+                        {msg.content}
+                      </Typography>
 
-          {/* Suggested Questions */}
-          {suggestedQuestions.length > 0 && (
-            <div className="card" style={{ padding: '1rem' }}>
-              <h2 className="mb-3 text-sm font-600 text-white">Suggested Questions</h2>
-              <div className="space-y-2">
-                {suggestedQuestions.slice(0, 4).map((question, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSuggestionClick(question)}
-                    className="w-full text-left text-xs text-slate-400 hover:text-green-400 transition-colors"
-                  >
-                    • {question}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </aside>
-
-        {/* Main Chat Area */}
-        <div className="card flex flex-col" style={{ padding: 0, minHeight: '600px', maxHeight: '80vh' }}>
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {conversationHistory.length === 0 ? (
-              <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center">
-                <Bot size={48} className="mb-4 text-slate-600" />
-                <p className="text-lg font-500 text-slate-300">Start a conversation with CampusBot</p>
-                <p className="mt-2 max-w-md text-sm text-slate-500">
-                  {activeTab === 'academic' 
-                    ? 'Ask about courses, exams, assignments, or any academic topic.'
-                    : 'Ask about registration, fees, scholarships, facilities, or any administrative service.'
-                  }
-                </p>
-              </div>
-            ) : (
-              conversationHistory.map((msg, idx) => (
-                <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role !== 'user' && (
-                    <div className="flex-shrink-0">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20 text-green-400">
-                        <Bot size={16} />
-                      </div>
-                    </div>
-                  )}
-                  <div className={`max-w-[80%] rounded-lg p-3 ${
-                    msg.role === 'user' 
-                      ? 'bg-green-600/20 text-slate-200' 
-                      : msg.role === 'error'
-                      ? 'bg-red-600/20 text-red-300'
-                      : 'bg-slate-800/50 text-slate-300'
-                  }`}>
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                      <Clock size={12} />
-                      {new Date(msg.timestamp).toLocaleTimeString()}
-                      {msg.responseTime && ` • ${msg.responseTime}ms`}
-                      {msg.role === 'assistant' && (
-                        <button
-                          onClick={() => copyToClipboard(msg.content)}
-                          className="ml-auto hover:text-green-400 transition-colors"
-                          title="Copy response"
+                      {/* Display Alert for auto-created ticket */}
+                      {msg.ticketCreated && msg.ticketId && (
+                        <Alert 
+                          severity="warning" 
+                          icon={<AlertTriangle size={18} />} 
+                          sx={{ mt: 2, borderRadius: 2, '& .MuiAlert-message': { width: '100%' } }}
                         >
-                          <Copy size={12} />
-                        </button>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Support Ticket Opened</Typography>
+                          <Typography variant="caption" color="textSecondary" display="block">
+                            I opened ticket <b>#{msg.ticketId}</b> because this request requires manual administrative approval.
+                          </Typography>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            color="inherit" 
+                            onClick={() => navigate(`/tickets/${msg.ticketId}`)}
+                            sx={{ mt: 1, fontSize: '0.65rem' }}
+                          >
+                            Track Ticket Status
+                          </Button>
+                        </Alert>
                       )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-            {loading && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20 text-green-400">
-                  <RefreshCw size={16} className="animate-spin" />
-                </div>
-                <div className="rounded-lg bg-slate-800/50 p-3">
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <span className="animate-pulse">CampusBot is thinking...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
 
-          {/* Input Form */}
-          <form onSubmit={handleSubmit} className="border-t border-slate-700/50 p-4">
-            <div className="flex gap-2">
-              <textarea
-                ref={inputRef}
-                className="input flex-1 min-h-[60px] max-h-[120px] resize-y"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSubmit(e)
-                  }
-                }}
-                placeholder={
-                  activeTab === 'academic'
-                    ? 'Ask about courses, exams, assignments...'
-                    : 'Ask about registration, fees, facilities...'
-                }
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                className="btn btn-primary h-[60px]"
-                disabled={loading || !question.trim()}
-              >
-                {loading ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} />}
-              </button>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-              <span>Press Enter to send, Shift+Enter for new line</span>
-              <span>{question.length}/4000</span>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+                      {/* Follow-up suggested FAQs */}
+                      {msg.suggestedFAQs && msg.suggestedFAQs.length > 0 && (
+                        <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>Related Questions:</Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {msg.suggestedFAQs.map((faq, fIdx) => (
+                              <Chip 
+                                key={fIdx} 
+                                label={faq} 
+                                size="small" 
+                                onClick={() => handleSuggestClick(faq)}
+                                sx={{ fontSize: '0.7rem', cursor: 'pointer' }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Response Footer (Timestamp & Rating) */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5, pt: 1, borderTop: '1px dotted var(--border)' }}>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </Typography>
+                        
+                        {msg.role === 'assistant' && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>Rate response:</Typography>
+                            <Rating 
+                              size="small" 
+                              defaultValue={5} 
+                              onChange={(event, val) => handleRatingSubmit(val, 'ai')}
+                              sx={{ fontSize: '0.8rem' }}
+                            />
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                ))
+              )}
+
+              {/* Typing indicators */}
+              {loading && (
+                <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
+                  <Box sx={{ p: 1, borderRadius: 2, backgroundColor: 'primary.light', color: 'primary.contrastText', height: 36, width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CircularProgress size={16} color="inherit" />
+                  </Box>
+                  <Box sx={{ p: 2, borderRadius: 3, backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.85rem' }}>
+                      CampusBot is analyzing query parameters...
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              <div ref={chatEndRef} />
+            </Box>
+
+            {/* Form input */}
+            <form onSubmit={handleSubmit} style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
+              <Grid container spacing={1.5} alignItems="center">
+                <Grid item xs>
+                  <TextField
+                    fullWidth
+                    inputRef={inputRef}
+                    placeholder={
+                      activeTab === 'academic'
+                        ? 'Ask about exams, timetables, syllabus, placement drives...'
+                        : 'Ask about hostel rooms, fee payment, bus passes...'
+                    }
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    disabled={loading}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSubmit()
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item>
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary" 
+                    disabled={loading || !question.trim()}
+                    sx={{ height: 56, px: 3 }}
+                  >
+                    <Send size={18} />
+                  </Button>
+                </Grid>
+              </Grid>
+            </form>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   )
 }

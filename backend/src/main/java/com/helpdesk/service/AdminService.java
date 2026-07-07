@@ -9,10 +9,12 @@ import com.helpdesk.entity.Ticket;
 import com.helpdesk.entity.User;
 import com.helpdesk.exception.BadRequestException;
 import com.helpdesk.exception.ResourceNotFoundException;
+import com.helpdesk.repository.AILogRepository;
 import com.helpdesk.repository.DepartmentRepository;
 import com.helpdesk.repository.TicketRepository;
 import com.helpdesk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final TicketRepository ticketRepository;
     private final TicketService ticketService;
+    private final AILogRepository aiLogRepository;
 
     @Transactional
     public DepartmentResponse createDepartment(DepartmentRequest request) {
@@ -132,6 +135,22 @@ public class AdminService {
                 "RESOLVED", resolved, "CLOSED", closed
         );
 
+        // Fetch detailed metrics for the Student Helpdesk Agent
+        long totalStudents = userRepository.countByRole(User.Role.USER);
+        long totalAIQueries = aiLogRepository.countAllQueries();
+        long queriesWithTickets = aiLogRepository.countQueriesWithTickets();
+        
+        double aiResolutionPercentage = 0.0;
+        if (totalAIQueries > 0) {
+            long aiResolved = totalAIQueries - queriesWithTickets;
+            aiResolutionPercentage = Math.round(((double) aiResolved / totalAIQueries) * 100.0 * 10.0) / 10.0;
+        }
+
+        List<Map<String, Object>> mostAsked = aiLogRepository.getMostAskedQuestions(PageRequest.of(0, 5));
+        List<Map<String, Object>> daily = aiLogRepository.getDailyQueryCounts(PageRequest.of(0, 10));
+        List<Map<String, Object>> peakHours = aiLogRepository.getPeakUsageHours();
+        List<Map<String, Object>> sentiment = aiLogRepository.getSentimentDistribution();
+
         return AnalyticsResponse.builder()
                 .totalTickets(total)
                 .openTickets(open)
@@ -142,6 +161,17 @@ public class AdminService {
                 .ticketsByPriority(byPriority)
                 .ticketsByDepartment(byDepartment)
                 .ticketsByStatus(byStatus)
+                
+                // Add new metrics
+                .totalStudents(totalStudents)
+                .totalAIQueries(totalAIQueries)
+                .manualQueries(total)
+                .pendingTickets(open + inProgress)
+                .aiResolutionPercentage(aiResolutionPercentage)
+                .mostAskedQuestions(mostAsked)
+                .dailyQueries(daily)
+                .peakUsageHours(peakHours)
+                .sentimentDistribution(sentiment)
                 .build();
     }
 }
