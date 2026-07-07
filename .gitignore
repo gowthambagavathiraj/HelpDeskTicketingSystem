@@ -8,6 +8,10 @@ frontend/.env
 # Spring Boot config with secrets
 backend/src/main/resources/application.properties
 
+# Files containing API keys / secrets
+AI_AGENT_ENHANCED_README.txt
+*.txt.bak
+
 # Maven build output
 backend/target/
 
