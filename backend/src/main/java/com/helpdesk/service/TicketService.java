@@ -79,8 +79,6 @@ public class TicketService {
         Page<Ticket> tickets;
         if (user.getRole() == User.Role.ADMIN) {
             tickets = ticketRepository.searchTickets(keyword, status, priority, departmentId, pageable);
-        } else if (user.getRole() == User.Role.SUPPORT_STAFF) {
-            tickets = ticketRepository.findByAssignedTo(user, pageable);
         } else {
             tickets = ticketRepository.searchTicketsByUser(user, keyword, status, pageable);
         }
@@ -130,8 +128,8 @@ public class TicketService {
         User assignee = userRepository.findById(request.getAssignedToId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", request.getAssignedToId()));
 
-        if (assignee.getRole() == User.Role.USER) {
-            throw new BadRequestException("Cannot assign ticket to a regular user. Only support staff or admins.");
+        if (assignee.getRole() != User.Role.ADMIN) {
+            throw new BadRequestException("Cannot assign ticket to a regular user. Only admins can be assigned.");
         }
 
         ticket.setAssignedTo(assignee);
@@ -164,8 +162,6 @@ public class TicketService {
 
     private void validateTicketAccess(Ticket ticket, User user) {
         if (user.getRole() == User.Role.ADMIN) return;
-        if (user.getRole() == User.Role.SUPPORT_STAFF &&
-                ticket.getAssignedTo() != null && ticket.getAssignedTo().getId().equals(user.getId())) return;
         if (ticket.getCreatedBy().getId().equals(user.getId())) return;
         throw new UnauthorizedException("You don't have access to this ticket.");
     }

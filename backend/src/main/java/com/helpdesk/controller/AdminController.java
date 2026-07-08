@@ -49,10 +49,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(adminService.getAllUsers()));
     }
 
-    @GetMapping("/users/support-staff")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getSupportStaff() {
-        return ResponseEntity.ok(ApiResponse.ok(adminService.getSupportStaff()));
-    }
 
     @PatchMapping("/users/{id}/role")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserRole(

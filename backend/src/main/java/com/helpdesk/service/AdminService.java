@@ -69,11 +69,6 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
-    public List<UserResponse> getSupportStaff() {
-        return userRepository.findByRole(User.Role.SUPPORT_STAFF).stream()
-                .map(ticketService::mapUserToResponse)
-                .collect(Collectors.toList());
-    }
 
     @Transactional
     public UserResponse updateUserRole(Long userId, User.Role newRole) {

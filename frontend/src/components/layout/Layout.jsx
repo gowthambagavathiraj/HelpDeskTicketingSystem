@@ -63,7 +63,6 @@ export default function Layout() {
   }
 
   const isAdmin = user?.role === 'ADMIN'
-  const isSupport = user?.role === 'SUPPORT_STAFF'
   const isStudent = user?.role === 'USER'
 
   return (
@@ -104,11 +103,11 @@ export default function Layout() {
           {isStudent && <NavItem to="/feedback" icon={MessageSquare} label="Submit Feedback" />}
 
           {/* Admin Management Section */}
-          {(isAdmin || isSupport) && (
+          {isAdmin && (
             <>
               <p className="px-3 mt-5 mb-2 text-[10px] font-700 uppercase tracking-widest text-slate-500">Staff Control</p>
-              {isAdmin && <NavItem to="/admin/analytics" icon={BarChart3} label="Analytics" />}
-              {isAdmin && <NavItem to="/admin/users" icon={Users} label="Manage Students" />}
+              <NavItem to="/admin/analytics" icon={BarChart3} label="Analytics" />
+              <NavItem to="/admin/users" icon={Users} label="Manage Students" />
             </>
           )}
         </nav>

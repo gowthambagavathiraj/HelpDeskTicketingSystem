@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ticketAPI, messageAPI, adminAPI } from '../../api/services'
+import { ticketAPI, messageAPI } from '../../api/services'
 import { PriorityBadge, StatusBadge, Spinner } from '../../components/common/ui'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
-import { Send, ArrowLeft, Shield } from 'lucide-react'
+import { Send, ArrowLeft } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import SockJS from 'sockjs-client'
 import { Client } from '@stomp/stompjs'
@@ -20,9 +20,6 @@ export default function TicketDetailPage() {
   const [newMsg, setNewMsg] = useState('')
   const [sendLoading, setSendLoading] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [supportStaff, setSupportStaff] = useState([])
-  const [assigning, setAssigning] = useState(false)
-  const [selectedAssignee, setSelectedAssignee] = useState('')
   const chatBottomRef = useRef(null)
   const stompRef = useRef(null)
 
@@ -34,10 +31,6 @@ export default function TicketDetailPage() {
       ])
       setTicket(tRes.data.data)
       setMessages(mRes.data.data || [])
-      if (user.role === 'ADMIN') {
-        const sRes = await adminAPI.getSupportStaff()
-        setSupportStaff(sRes.data.data || [])
-      }
     } catch (e) {
       toast.error('Failed to load ticket')
       navigate('/tickets')
@@ -98,20 +91,6 @@ export default function TicketDetailPage() {
     }
   }
 
-  const assignTicket = async () => {
-    if (!selectedAssignee) { toast.error('Please select a staff member'); return }
-    setAssigning(true)
-    try {
-      const { data } = await ticketAPI.assign(id, Number(selectedAssignee))
-      setTicket(data.data)
-      toast.success('Ticket assigned!')
-      setSelectedAssignee('')
-    } catch (e) {
-      toast.error('Failed to assign ticket')
-    } finally {
-      setAssigning(false)
-    }
-  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-full"><Spinner size="lg" /></div>
@@ -120,7 +99,7 @@ export default function TicketDetailPage() {
 
   const isClosed = ticket.status === 'CLOSED'
   const isAdmin = user.role === 'ADMIN'
-  const canChangeStatus = isAdmin || user.role === 'SUPPORT_STAFF' || ticket.createdBy?.id === user.id
+  const canChangeStatus = isAdmin || ticket.createdBy?.id === user.id
 
   return (
     <div className="flex h-full animate-fade-in">
@@ -180,25 +159,7 @@ export default function TicketDetailPage() {
           </div>
         )}
 
-        {/* Assign Ticket (Admin only) */}
-        {isAdmin && !isClosed && (
-          <div>
-            <p className="text-xs font-500 text-slate-400 mb-2 flex items-center gap-1">
-              <Shield size={11} /> Assign Ticket
-            </p>
-            <select className="input text-xs mb-2" value={selectedAssignee}
-              onChange={e => setSelectedAssignee(e.target.value)}>
-              <option value="">Select support staff</option>
-              {supportStaff.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-            <button className="btn btn-primary w-full justify-center text-xs py-1.5"
-              onClick={assignTicket} disabled={assigning}>
-              {assigning ? <Spinner /> : 'Assign'}
-            </button>
-          </div>
-        )}
+
       </div>
 
       {/* ─── Right: Chat ───────────────────────── */}
@@ -220,7 +181,7 @@ export default function TicketDetailPage() {
           )}
           {messages.map(msg => {
             const isMe = msg.sender?.id === user.id
-            const isStaff = ['SUPPORT_STAFF', 'ADMIN'].includes(msg.sender?.role)
+            const isStaff = msg.sender?.role === 'ADMIN'
             return (
               <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-600 flex-shrink-0 ${
@@ -233,7 +194,7 @@ export default function TicketDetailPage() {
                     <span className="text-xs font-500 text-slate-400">{msg.sender?.name}</span>
                     {isStaff && (
                       <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-700/30 text-indigo-300">
-                        {msg.sender.role === 'ADMIN' ? 'Admin' : 'Support'}
+                        Admin
                       </span>
                     )}
                     <span className="text-xs text-slate-600">

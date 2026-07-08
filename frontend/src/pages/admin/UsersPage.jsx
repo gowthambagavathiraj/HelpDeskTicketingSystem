@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { ToggleLeft, ToggleRight, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const ROLES = ['USER', 'SUPPORT_STAFF', 'ADMIN']
+const ROLES = ['USER', 'ADMIN']
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])

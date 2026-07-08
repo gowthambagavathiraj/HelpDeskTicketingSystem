@@ -92,7 +92,7 @@ public class User {
     private List<Ticket> assignedTickets;
 
     public enum Role {
-        USER, SUPPORT_STAFF, ADMIN
+        USER, ADMIN
     }
     
     public enum AuthProvider {

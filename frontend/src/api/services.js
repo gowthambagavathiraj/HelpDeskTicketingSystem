@@ -39,7 +39,6 @@ export const departmentAPI = {
 export const adminAPI = {
   getAnalytics: () => api.get('/admin/analytics'),
   getUsers: () => api.get('/admin/users'),
-  getSupportStaff: () => api.get('/admin/users/support-staff'),
   updateUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, null, { params: { role } }),
   toggleUserActive: (id) => api.patch(`/admin/users/${id}/toggle-active`),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),

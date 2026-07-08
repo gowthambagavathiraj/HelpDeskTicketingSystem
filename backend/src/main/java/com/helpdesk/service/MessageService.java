@@ -77,8 +77,6 @@ public class MessageService {
 
     private void validateMessageAccess(Ticket ticket, User user) {
         if (user.getRole() == User.Role.ADMIN) return;
-        if (user.getRole() == User.Role.SUPPORT_STAFF &&
-                ticket.getAssignedTo() != null && ticket.getAssignedTo().getId().equals(user.getId())) return;
         if (ticket.getCreatedBy().getId().equals(user.getId())) return;
         throw new UnauthorizedException("You don't have access to this ticket's messages.");
     }
